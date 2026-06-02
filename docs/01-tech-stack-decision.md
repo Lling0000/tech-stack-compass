@@ -1,0 +1,114 @@
+# 技术栈选择矩阵
+
+技术选型的第一目标不是先进，而是让真实用户问题尽快跑通，并且后面还能维护。
+
+## 总原则
+
+1. 先选团队会的，再选行业流行的，最后才选理论最优的。
+2. 除非技术本身就是产品竞争力，否则优先选成熟技术。
+3. 0 到 1 阶段尽量保持：一个后端、一个主数据库、一个部署方式。
+4. 先满足业务形态，再谈性能指标。
+5. 优先选择可迁移方案，不把核心数据锁死在难换的平台里。
+6. 主数据库优先考虑关系型数据库。
+7. 能用托管服务就先用托管服务。
+8. 不要为“未来可能很大”提前复杂化。
+
+默认起步组合：
+
+| 产品类型 | 推荐起步栈 |
+| --- | --- |
+| SaaS 管理后台 | React/Vue + Node.js/Python/Java/.NET + Postgres + Redis 可选 |
+| AI 工具 | Next.js/React + Python FastAPI + Postgres + Redis + S3/R2/OSS |
+| 内容站 / 博客 / 官网 | Next.js/Nuxt/Astro + Headless CMS 或 Markdown + 对象存储 |
+| 电商 / CMS | Laravel/WordPress + MySQL/Postgres + Redis + 对象存储 |
+| 内部工具 | Retool/Appsmith 或 Vue/React + FastAPI + Postgres |
+| 移动 App | React Native 或 Flutter + 后端 API + Postgres + 对象存储 |
+| 桌面工具 | Tauri/Electron + SQLite + 云端同步按需 |
+| 数据分析产品 | Postgres 起步；数据量上来后接 ClickHouse |
+| 搜索型产品 | Postgres 全文搜索起步；搜索体验要求高再接 OpenSearch/Elasticsearch |
+| 异步任务产品 | 数据库任务表起步；任务量稳定后用 SQS/RabbitMQ；事件流再 Kafka |
+
+## 后端语言和框架
+
+| 技术 | 什么时候用 | 什么时候别用 | 常见坑 | 低成本替代 |
+| --- | --- | --- | --- | --- |
+| Python | AI、数据处理、自动化、内部工具、API 服务。FastAPI 适合轻量 API，Django 适合带后台和 ORM 的业务系统。 | 对单机 CPU 性能、极低延迟、CPU 并行要求很高，且团队不熟多进程或拆服务。 | 依赖环境混乱；把脚本项目硬做成大型服务；异步代码写一半同步一半。 | FastAPI + Postgres；性能瓶颈模块用 Go/Rust；计算任务放队列。 |
+| Node.js | 前后端都用 TypeScript；I/O 密集型 API；实时协作、聊天、Webhook、BFF 层。 | CPU 密集型计算；团队缺少工程规范；复杂领域模型却只想快速拼接口。 | npm 依赖膨胀；异步错误处理混乱；业务逻辑散在路由里。 | NestJS 做结构化后端；Fastify 做轻量 API；CPU 任务拆到 worker 或服务。 |
+| Go | 网络服务、基础设施工具、CLI、网关、微服务、任务处理、低资源占用服务。 | 需要快速做复杂 CRUD、后台管理、丰富 ORM、动态业务规则。 | 过早手写大量基础设施；错误处理模板化过多；业务代码被工程代码淹没。 | 先用 Python/Node 验证；性能或部署优势明确后再用 Go。 |
+| Java / Kotlin | 企业系统、金融、电商、复杂流程、长期维护项目、大团队协作。Spring 生态成熟。 | 小团队快速试错；简单 MVP；不想承担较重项目结构和配置。 | 过度分层；样板代码多；还没验证产品就做成大型企业架构。 | Kotlin + Spring Boot 减少样板；MVP 可先用 Node/Python/Rails/Laravel。 |
+| Rust | 系统编程、性能敏感服务、嵌入式、区块链、加密、安全边界、WebAssembly。 | 普通 CRUD、管理后台、快速 MVP；团队没有 Rust 经验。 | 学习曲线高；开发速度慢；为了性能牺牲产品节奏。 | Go 做高性能服务；Python/Node 做业务验证；关键模块再用 Rust。 |
+| PHP | 内容站、CMS、电商、传统 Web、Laravel SaaS、WordPress 生态项目。 | 强实时、高复杂计算、现代工程团队完全无 PHP 经验。 | 老项目代码质量差；过度依赖插件；安全和权限处理随意。 | Laravel 做现代 PHP；WordPress 做内容型项目；复杂业务转 Java/.NET/Node。 |
+| Ruby | Rails 快速做 SaaS、管理后台、CRM、订阅系统、社区产品。 | 性能极敏感；团队所在地 Ruby 招聘困难；需要大量底层优化。 | Rails 太快导致模型臃肿；业务逻辑全塞 ActiveRecord；后期拆分困难。 | Rails 起步很强；团队不熟可用 Laravel、Django、Next.js 全栈。 |
+| C# / .NET | 企业系统、Windows 生态、Azure、内部管理平台、游戏后端、长期维护服务。 | 团队完全不熟 .NET；产品更依赖开源脚本生态或 AI 数据生态。 | 项目做得过重；历史 .NET Framework 和现代 .NET 混用；配置复杂化。 | ASP.NET Core + Postgres；小型 MVP 可先用 Node/Python。 |
+
+## 前端、移动端和桌面
+
+| 技术 | 什么时候用 | 什么时候别用 | 常见坑 | 低成本替代 |
+| --- | --- | --- | --- | --- |
+| React | SaaS、后台、复杂交互、组件生态要求高、招聘面广。 | 很小静态页面；团队更熟 Vue；不想处理状态管理和工程选择。 | 状态管理过度设计；组件拆太碎；到处 useEffect；样式体系混乱。 | Vite + React 起步；小页面用 Astro/HTML；Vue 团队直接用 Vue。 |
+| Vue | 中后台、内容管理、国内团队、渐进式改造、上手成本低。 | 强依赖 React 生态；团队主要是 React 经验。 | Options API 和 Composition API 混乱；组件通信随意；后台模板质量参差。 | Vue + Vite；需要 SSR 用 Nuxt；简单后台用成熟 admin 模板但克制改造。 |
+| Svelte | 小团队、轻量应用、交互页面、性能敏感但不想写大量模板代码。 | 大型团队招聘；需要成熟企业生态；长期交给不熟 Svelte 的团队。 | 生态选择少；个人体验好但团队规范不足；过度追新。 | React/Vue 更稳；静态站用 Astro；轻交互用原生 JS。 |
+| Next.js | React SSR/SSG、内容站、营销站、带登录 Web App、SEO。 | 纯后台系统；简单 SPA；不需要 SSR 却被复杂路由和缓存拖慢。 | App Router、Server Components、缓存策略理解不清；前后端边界混乱。 | React + Vite 做纯前端；后端单独 FastAPI/NestJS；内容站用 Astro。 |
+| Nuxt | Vue SSR/SSG、内容站、官网、SEO 友好的 Vue 应用。 | 纯内部后台；团队不熟 Vue；不需要服务端渲染。 | 插件和自动导入过度依赖；服务端和客户端状态混淆。 | Vue + Vite；内容站用 Astro；后端 API 单独拆出。 |
+| React Native | 已有 React 团队；跨 iOS/Android；业务以表单、列表、内容、轻交互为主。 | 强依赖原生能力；复杂动画、游戏、重图形；团队没有移动调试经验。 | 原生模块兼容；升级成本；不同平台 UI 细节不一致。 | Expo 起步；简单移动需求先做 PWA；重原生体验用原生或 Flutter。 |
+| Flutter | 统一 UI、跨平台 App、复杂界面、动画、强视觉一致性。 | 产品主要是 Web；团队完全无移动经验；大量平台原生插件。 | 包体积；原生集成成本；Dart 招聘面；Web 体验不一定适合。 | React Native；PWA；iOS/Android 原生；内部工具先用 Web App。 |
+| Electron / Tauri | 桌面软件、开发者工具、访问本地文件/系统能力、已有 Web 前端。 | 只是网页套壳；不需要本地能力；对体积和内存极敏感。 | Electron 资源占用高；自动更新、签名、权限、崩溃处理被低估。 | 先做 Web App；轻量桌面用 Tauri；只需命令行能力做 CLI。 |
+
+## 数据库、缓存、队列、搜索、对象存储
+
+| 技术 | 什么时候用 | 什么时候别用 | 常见坑 | 低成本替代 |
+| --- | --- | --- | --- | --- |
+| Postgres | 默认首选主数据库；SaaS、业务系统、JSON 字段、全文搜索、地理数据、复杂查询。 | 团队只熟 MySQL 且没有迁移收益；极简单嵌入式应用；超大规模分析查询。 | 把 JSONB 当万能 NoSQL；索引缺失；连接数打满；迁移脚本不规范。 | 托管 Postgres；小项目 SQLite；分析查询接 ClickHouse。 |
+| MySQL | 传统 Web、电商、内容系统、团队经验丰富、云厂商支持完善。 | 复杂 JSON、全文检索、地理扩展、强分析能力优先级可能低于 Postgres。 | 字符集和排序规则问题；隐式类型转换；事务隔离理解不清；过早分库分表。 | 托管 MySQL；新项目可评估 Postgres。 |
+| SQLite | 原型、单机工具、桌面 App、小型服务、测试环境、嵌入式数据库。 | 多写入并发很高；多实例共享写数据库；复杂权限和运维能力。 | 把它当大型服务数据库；文件锁问题；备份和迁移没规划。 | 多人服务迁 Postgres/MySQL；本地缓存用本地文件。 |
+| Redis | 缓存、会话、限流、排行榜、短期状态、轻量队列。 | 当主数据库；保存不能丢的核心业务数据；没有明确过期策略。 | 缓存穿透/击穿；大 key；内存成本失控；持久化预期错误。 | 先不用缓存；数据库索引优化；简单限流用应用内存。 |
+| Kafka | 事件流、日志管道、数据同步、行为数据、多个消费者处理同一批事件。 | 只是发异步邮件、简单后台任务、低流量消息通知。 | 运维复杂；topic 设计随意；消费者积压没人看；把它当普通任务队列。 | SQS、RabbitMQ、Redis Queue；早期用数据库任务表。 |
+| RabbitMQ | 任务队列、异步处理、业务消息、路由规则、确认机制、延迟/重试。 | 海量日志流、长期事件存储、多消费者回放。 | 重试导致消息风暴；死信队列没人处理；消息幂等没做。 | SQS 托管更省心；Redis Queue 更轻；简单任务用数据库表。 |
+| SQS | AWS 上的托管队列；异步任务、削峰、跨服务解耦；不想维护队列服务器。 | 不在 AWS；强依赖本地部署；需要复杂路由或低延迟实时消息。 | 可见性超时设置错误；重复投递没处理；FIFO 队列吞吐预期过高。 | RabbitMQ；Redis Queue；数据库任务表；云厂商同类队列。 |
+| OpenSearch / Elasticsearch | 全文搜索、日志检索、复杂过滤、搜索相关性、可观测数据查询。 | 简单标题搜索；数据量小；没人维护索引和映射。 | 当主数据库；mapping 设计错误；分词不符合业务；集群成本高。 | Postgres 全文搜索；Meilisearch/Typesense；SQL LIKE + 索引。 |
+| ClickHouse | 事件分析、埋点、日志分析、报表、宽表聚合、读多写批量分析。 | 事务型业务数据；频繁单行更新；强一致订单/账户系统。 | 当 OLTP 数据库；表引擎和分区设计不清；小数据量复杂化。 | Postgres 聚合先顶住；云数仓；日志量小用 OpenSearch 或普通报表。 |
+| S3 / R2 / OSS / COS | 图片、视频、附件、备份、导出文件、静态资源。 | 需要像数据库一样查询对象内容；频繁小文件强一致本地读写。 | 权限公开错误；没有生命周期清理；CDN 缓存没规划；大文件绕后端成本高。 | 本地文件只适合原型；Supabase Storage；云厂商对象存储。 |
+
+## 默认决策树
+
+不知道选什么后端：
+
+- 会 Python：FastAPI/Django。
+- 会 TypeScript：NestJS/Fastify。
+- 企业项目：Java/Kotlin 或 .NET。
+- 性能和部署优先：Go。
+
+不知道选什么前端：
+
+- 团队会 React 就 React。
+- 团队会 Vue 就 Vue。
+- 需要 SEO 用 Next.js/Nuxt。
+- 只是后台系统，不必强上 SSR。
+
+不知道选什么数据库：
+
+- 默认 Postgres。
+- 已有 MySQL 经验和生态就 MySQL。
+- 单机、小工具、原型用 SQLite。
+
+不知道要不要 Redis：
+
+- 先不要。
+- 等出现明确的缓存、会话、限流、短期状态需求再加。
+
+不知道要不要消息队列：
+
+- 少量异步任务先用数据库任务表。
+- 稳定异步处理用 SQS/RabbitMQ。
+- 事件流和多消费者回放再 Kafka。
+
+不知道要不要搜索引擎：
+
+- 先用数据库搜索。
+- 搜索质量、分词、排序、过滤成为核心体验后，再引入搜索引擎。
+
+不知道文件放哪里：
+
+- 不要放数据库。
+- 用对象存储。
+- 本地文件只适合原型和单机工具。
